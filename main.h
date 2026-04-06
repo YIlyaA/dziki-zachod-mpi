@@ -5,17 +5,10 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <unistd.h>
-#include <string.h>
 #include <pthread.h>
 
 #include "util.h"
-/* boolean */
-#define TRUE 1
-#define FALSE 0
 #define SEC_IN_STATE 1
-#define STATE_CHANGE_PROB 10
-
-#define ROOT 0
 
 #define max(a, b) ((a) > (b) ? (a) : (b))
 

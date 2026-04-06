@@ -40,14 +40,4 @@ extern pthread_mutex_t stateMut;
 /* zmiana stanu, obwarowana muteksem */
 void changeState(state_t);
 
-/* --- salon.c --- */
-void salon_request();
-void salon_release();
-void handle_req_salon(packet_t pkt);
-void handle_ack_salon(packet_t pkt);
-
-/* --- parowanie.c --- */
-void send_ready();
-void handle_ready(packet_t pkt);
-void handle_pair_confirm(packet_t pkt);
 #endif

@@ -1,5 +1,7 @@
 #include "main.h"
 #include "util.h"
+#include "salon.h"
+#include "parowanie.h"
 #include "watek_komunikacyjny.h"
 
 /* wątek komunikacyjny; zajmuje się odbiorem i reakcją na komunikaty */
