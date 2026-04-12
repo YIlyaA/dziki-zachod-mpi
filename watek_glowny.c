@@ -11,21 +11,28 @@ void mainLoop()
     while (1) {
         switch (stan) {
             case REST:
-                /* TODO */
-                sleep(1);
+                println("Odpoczywam");
+                sleep(rand() % SEC_IN_STATE + 1);
+                salon_request();
                 break;
 
             case WAIT_SALON:
-                /* TODO */
-                sleep(1);
+                println("Probuję wejść do salonu");
+                pthread_mutex_lock(&state_cond_mut);
+                while(stan == WAIT_SALON)
+                    pthread_cond_wait(&salon_cond, &state_cond_mut);
+                pthread_mutex_unlock(&state_cond_mut);
                 break;
 
             case IN_SALON:
-                /* TODO */
-                sleep(1);
+                println("Wchodzę do salonu");
+                sleep(rand() % SEC_IN_STATE + 1);
+                send_ready();
+                changeState(WAIT_DUEL);
                 break;
 
             case WAIT_DUEL:
+                println("Ogłaszam gotowość do pojedynku");
                 pthread_mutex_lock(&state_cond_mut);
                 while (stan == WAIT_DUEL)
                     pthread_cond_wait(&duel_cond, &state_cond_mut);
