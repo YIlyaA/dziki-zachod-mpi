@@ -89,10 +89,10 @@ int main(int argc, char **argv)
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     if (argc >= 2)
         S = atoi(argv[1]);
-    if (S < 1 || S >= size)
+    if (S < 2 || S >= size)
     {
         if (rank == 0)
-            fprintf(stderr, "Nieprawidłowe S=%d dla n=%d. Używam S=2.\n", S, size);
+            fprintf(stderr, "Nieprawidłowe S=%d dla n=%d (min 2 — potrzeba pary w salonie). S=2.\n", S, size);
         S = 2;
     }
     /* startKomWatek w watek_komunikacyjny.c

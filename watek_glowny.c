@@ -27,8 +27,9 @@ void mainLoop()
             case IN_SALON:
                 println("Wchodzę do salonu");
                 sleep(rand() % SEC_IN_STATE + 1);
-                send_ready();
                 changeState(WAIT_DUEL);
+                send_ready();
+                try_pairing();
                 break;
 
             case WAIT_DUEL:
