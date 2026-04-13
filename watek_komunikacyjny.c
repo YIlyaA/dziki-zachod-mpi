@@ -9,7 +9,7 @@ void *startKomWatek(void *ptr)
 {
     MPI_Status status;
     packet_t pakiet;
-    while (stan != HOSPITAL)
+    while (1)
     {
         debug("czekam na recv");
         MPI_Recv(&pakiet, 1, MPI_PAKIET_T, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);

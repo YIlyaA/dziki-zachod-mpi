@@ -6,7 +6,7 @@ MPI_Datatype MPI_PAKIET_T;
  * w util.h extern state_t stan (czyli zapowiedź, że gdzieś tam jest definicja
  * tutaj w util.c state_t stan (czyli faktyczna definicja)
  */
-state_t stan = InRun;
+state_t stan = REST;
 
 /* zamek wokół zmiennej współdzielonej między wątkami.
  * Zwróćcie uwagę, że każdy proces ma osobą pamięć, ale w ramach jednego

@@ -1,12 +1,9 @@
 #include "parowanie.h"
 
-/* Wstawia proces do ready_list zachowując sortowanie po (ts, pid).
- * Wywołuj tylko z wątku komunikacyjnego lub gdy masz ready_list_mut. */
 static void ready_list_add(int pid, int ts)
 {
     pthread_mutex_lock(&ready_list_mut);
 
-    /* znajdź pozycję wstawienia */
     int pos = ready_list_size;
     for (int i = 0; i < ready_list_size; i++) {
         if (ts < ready_list[i].ts || (ts == ready_list[i].ts && pid < ready_list[i].pid)) {
@@ -15,7 +12,6 @@ static void ready_list_add(int pid, int ts)
         }
     }
 
-    /* przesuń elementy w prawo */
     for (int i = ready_list_size; i > pos; i--)
         ready_list[i] = ready_list[i - 1];
 
@@ -26,30 +22,28 @@ static void ready_list_add(int pid, int ts)
     pthread_mutex_unlock(&ready_list_mut);
 }
 
-/* Usuwa parę: parzysty element (pid_even) i jego poprzednik (nieparzysty).
- * Listy są identyczne u wszystkich procesów (ten sam sort po Lamporcie),
- * więc poprzednik parzystego to zawsze jego partner. Usuwamy atomowo. */
-static void ready_list_remove_pair(int pid_even)
+static void ready_list_remove(int id1, int id2)
 {
     pthread_mutex_lock(&ready_list_mut);
-
-    for (int i = 1; i < ready_list_size; i++) {
-        if (ready_list[i].pid == pid_even) {
-            /* i-1 — nieparzysty partner, i — parzysty inicjator */
-            for (int j = i - 1; j < ready_list_size - 2; j++)
-                ready_list[j] = ready_list[j + 2];
-            ready_list_size -= 2;
-            break;
+    int dst = 0;
+    for (int i = 0; i < ready_list_size; i++) {
+        if (ready_list[i].pid != id1 && ready_list[i].pid != id2) {
+            ready_list[dst++] = ready_list[i];
         }
     }
-
+    ready_list_size = dst;
     pthread_mutex_unlock(&ready_list_mut);
 }
 
 static void check_pairing()
 {
-    /* znajdź swoją pozycję w ready_list (1-based) */
     pthread_mutex_lock(&ready_list_mut);
+
+    if (paired) {
+        pthread_mutex_unlock(&ready_list_mut);
+        return;
+    }
+
     int pos = -1;
     for (int i = 0; i < ready_list_size; i++) {
         if (ready_list[i].pid == rank) {
@@ -57,34 +51,55 @@ static void check_pairing()
             break;
         }
     }
-    int my_partner = (pos >= 2) ? ready_list[pos - 2].pid : -1;
+
+    if (pos < 0 || pos % 2 != 0) {
+        pthread_mutex_unlock(&ready_list_mut);
+        return;
+    }
+
+    int my_partner = ready_list[pos - 2].pid;
+    paired = 1;
+    partner_id = my_partner;
+
+    int dst = 0;
+    for (int i = 0; i < ready_list_size; i++) {
+        if (ready_list[i].pid != rank && ready_list[i].pid != my_partner) {
+            ready_list[dst++] = ready_list[i];
+        }
+    }
+    ready_list_size = dst;
+
     pthread_mutex_unlock(&ready_list_mut);
 
-    /* nie ma nas na liście lub jesteśmy na nieparzystej pozycji — czekamy */
-    if (pos < 0 || pos % 2 != 0)
-        return;
-
-    /* jesteśmy na parzystej pozycji — ogłaszamy parę wszystkim */
     packet_t pkt;
     pkt.data = my_partner;
     for (int i = 0; i < size; i++)
         if (i != rank)
             sendPacket(&pkt, i, PAIR_CONFIRM);
 
-    /* sami też obsługujemy PAIR_CONFIRM — logika przejścia jest w jednym miejscu */
-    handle_pair_confirm(pkt);
+    println("Sparowany z procesem %d", my_partner);
+    changeState(IN_DUEL);
+    pthread_mutex_lock(&state_cond_mut);
+    pthread_cond_signal(&duel_cond);
+    pthread_mutex_unlock(&state_cond_mut);
 }
 
 void send_ready()
 {
-    println("Ogłaszam gotowość do pojedynku");
+    pthread_mutex_lock(&lamportMutex);
+    lamportClock++;
+    int ts = lamportClock;
+    pthread_mutex_unlock(&lamportMutex);
 
-    /* najpierw dodaj siebie — żeby być w liście przed wysłaniem READY */
-    ready_list_add(rank, lamportClock);
+    ready_list_add(rank, ts);
 
+    packet_t pkt;
+    pkt.ts = ts;
+    pkt.src = rank;
+    pkt.data = 0;
     for (int i = 0; i < size; i++)
         if (i != rank)
-            sendPacket(NULL, i, READY);
+            MPI_Send(&pkt, 1, MPI_PAKIET_T, i, READY, MPI_COMM_WORLD);
 }
 
 void handle_ready(packet_t pkt)
@@ -97,24 +112,26 @@ void handle_ready(packet_t pkt)
 
 void handle_pair_confirm(packet_t pkt)
 {
-    int id_even = pkt.src;  /* parzysty — inicjator */
-    int id_odd  = pkt.data; /* nieparzysty — partner */
+    int id1 = pkt.src;
+    int id2 = pkt.data;
 
-    /* każdy usuwa tę parę ze swojego ready_list */
-    ready_list_remove_pair(id_even);
-
-    if (rank == id_even || rank == id_odd) {
-        /* jesteśmy jednym z uczestników pary */
-        partner_id = (rank == id_even) ? id_odd : id_even;
+    if (rank == id1 || rank == id2) {
+        partner_id = (rank == id1) ? id2 : id1;
         paired = 1;
+        ready_list_remove(id1, id2);
         println("Sparowany z procesem %d", partner_id);
         changeState(IN_DUEL);
         pthread_mutex_lock(&state_cond_mut);
         pthread_cond_signal(&duel_cond);
         pthread_mutex_unlock(&state_cond_mut);
     } else {
-        /* jesteśmy obserwatorem — pozycja mogła się zmienić, sprawdzamy */
+        ready_list_remove(id1, id2);
         if (stan == WAIT_DUEL)
             check_pairing();
     }
+}
+
+void try_pairing()
+{
+    check_pairing();
 }
