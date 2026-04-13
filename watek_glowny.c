@@ -29,7 +29,7 @@ void mainLoop()
                 sleep(rand() % SEC_IN_STATE + 1);
                 changeState(WAIT_DUEL);
                 send_ready();
-                try_pairing();
+                check_pairing();
                 break;
 
             case WAIT_DUEL:

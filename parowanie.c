@@ -35,7 +35,7 @@ static void ready_list_remove(int id1, int id2)
     pthread_mutex_unlock(&ready_list_mut);
 }
 
-static void check_pairing()
+void check_pairing()
 {
     pthread_mutex_lock(&ready_list_mut);
 
@@ -131,7 +131,3 @@ void handle_pair_confirm(packet_t pkt)
     }
 }
 
-void try_pairing()
-{
-    check_pairing();
-}
