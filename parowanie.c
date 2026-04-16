@@ -65,6 +65,7 @@ void check_pairing()
     int my_partner = ready_list[pos - 2].pid;
     paired = 1;
     partner_id = my_partner;
+    partner_ts = ready_list[pos - 2].ts;
 
     int dst = 0;
     for (int i = 0; i < ready_list_size; i++) {
@@ -142,6 +143,14 @@ void handle_pair_confirm(packet_t pkt)
     if (rank == id1 || rank == id2) {
         partner_id = (rank == id1) ? id2 : id1;
         paired = 1;
+        pthread_mutex_lock(&ready_list_mut);
+        for (int i = 0; i < ready_list_size; i++) {
+            if (ready_list[i].pid == partner_id) {
+                partner_ts = ready_list[i].ts;
+                break;
+            }
+        }
+        pthread_mutex_unlock(&ready_list_mut);
         ready_list_remove(id1, id2);
         println("Sparowany z procesem %d", partner_id);
         changeState(IN_DUEL);

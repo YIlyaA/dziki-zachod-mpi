@@ -31,6 +31,7 @@ int ready_list_size = 0;
 pthread_mutex_t ready_list_mut = PTHREAD_MUTEX_INITIALIZER;
 
 int partner_id = -1;
+int partner_ts = 0;
 int paired = 0;
 
 int my_ready_ts = 0;

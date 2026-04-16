@@ -8,7 +8,7 @@
 #include <pthread.h>
 
 #include "util.h"
-#define SEC_IN_STATE 1
+#define SEC_IN_STATE 3
 
 #define max(a, b) ((a) > (b) ? (a) : (b))
 
@@ -43,6 +43,7 @@ extern int ready_list_size;
 extern pthread_mutex_t ready_list_mut;
 
 extern int partner_id;
+extern int partner_ts;
 extern int paired;
 
 extern int my_ready_ts;

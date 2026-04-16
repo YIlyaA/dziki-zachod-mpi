@@ -44,7 +44,9 @@ void mainLoop()
                 println("Wchodzę do pojedynku z %d", partner_id);
                 salon_release();
                 sleep(rand() % SEC_IN_STATE + 1);
-                if (rank < partner_id) {
+                int i_lose = (my_ready_ts > partner_ts) ||
+                             (my_ready_ts == partner_ts && rank > partner_id);
+                if (i_lose) {
                     println("Przegrałem");
                     changeState(HOSPITAL);
                 } else {
