@@ -1,39 +1,32 @@
-DEMONSTRACJA DZIAŁANIA WĄTKÓW W MPI
-===================================
-Repozytorium zawiera prosty przykład projektu z użyciem wątków. Można wykorzystać ten projekt
-jako szkielet dla własnych rozwiązań.
+DZIKI ZACHÓD — symulacja pojedynków (MPI + pthreads)
+=====================================================
 
-Struktura:
+Projekt z przedmiotu systemy rozproszone. Procesy konkurują o miejsca w salonie
+(sekcja krytyczna z pojemnością S), dobierają się w pary i toczą pojedynki.
 
-- main.h <- makra debug oraz println, zmienne współdzielone przez wątki
-- util.h <- wysyłanie wiadomości, inicjalizacja, zmienne współdzielone używane przez funkcje z util.c
-- watek_glowny.h <- główna pętla programu. 
-- watek_komunikacyjny.h <- wątek odpowiedzialny za odbieranie wiadomości.
- 
-ZADANIE:
-=======
-Zaimplementować zegary lamporta oraz dowolny algorytm dostępu do sekcji krytycznej.
-Zaimplementować wyświetlanie zegarów w makrach println oraz debug.
-1) stworzyć zmienną globalną w jakimś pliku .c oraz zapowiedź (extern) w jakimś pliku .h
-2) zmodyfikować makra println i debug w pliku main.h by wyświetlały zegar lamporta
-3) przy wysyłaniu (sendPacket) zwiększać lokalny zegary lamporta, dołączać jako pole ts do wiadomości
-4) przy odbieraniu (wątek komunikacyjny) max( ts, lokalny zegar ) +1
-5) pamiętać o obwarowaniu dostępu do zegara lamporta muteksami
+Algorytmy:
 
-UWAGA! TO JUŻ JEST:
-w struct packet_t jest już pole "ts" - to będzie timestamp.
-Trzeba dodać zmienną clock i obwarować ją muteksami.
+- zegary Lamporta
+- wzajemne wykluczanie z pojemnością S (wariant Ricart-Agrawala dla k-mutex)
+- dobór w pary oparty o ``ready_list`` sortowaną po ``(ts, pid)``
 
-KOMPILACJA, URUCHOMIENIE
-========================
+Kompilacja i uruchomienie
+-------------------------
 
-Najprościej kompilować używając załączonego Makefile.
+::
 
-    make clean # usuwa pliki wykonywalne
+    make            # kompiluje
+    make run        # uruchamia mpirun -np 8
+    make clean      # sprząta
 
-    make # kompiluje
+Parametr ``S`` (pojemność salonu) można podać jako argv[1], domyślnie 2.
 
-    make run # uruchamia
+Struktura
+---------
 
-Jeżeli nie działa make, może to być spowodowane brakiem polecenia ctags. W takim wypadku należy
-wykomentować regułę ctags z Makefile, albo wyrzucić ją z zależności dla reguły all
+- ``main.c/.h`` — inicjalizacja MPI, zmienne globalne, makra ``println``/``debug``
+- ``watek_glowny.c`` — pętla stanów procesu
+- ``watek_komunikacyjny.c`` — odbiór wiadomości MPI
+- ``salon.c`` — wejście do salonu (sekcja krytyczna)
+- ``parowanie.c`` — dobór w pary do pojedynku
+- ``util.c`` — typ pakietu MPI, ``sendPacket``, zarządzanie stanem
