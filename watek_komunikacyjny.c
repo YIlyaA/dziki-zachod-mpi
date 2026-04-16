@@ -35,6 +35,10 @@ void *startKomWatek(void *ptr)
             debug("READY od %d ts=%d", status.MPI_SOURCE, pakiet.ts);
             handle_ready(pakiet);
             break;
+        case ACK_READY:
+            debug("ACK_READY od %d (dla READY ts=%d)", status.MPI_SOURCE, pakiet.data);
+            handle_ack_ready(pakiet);
+            break;
         case PAIR_CONFIRM:
             debug("PAIR_CONFIRM od %d partner=%d", status.MPI_SOURCE, pakiet.data);
             handle_pair_confirm(pakiet);

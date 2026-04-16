@@ -19,6 +19,7 @@ typedef struct
 #define RELEASE_SALON 3
 #define READY 4
 #define PAIR_CONFIRM 5
+#define ACK_READY 6
 
 extern MPI_Datatype MPI_PAKIET_T;
 void inicjuj_typ_pakietu();

@@ -33,6 +33,9 @@ pthread_mutex_t ready_list_mut = PTHREAD_MUTEX_INITIALIZER;
 int partner_id = -1;
 int paired = 0;
 
+int my_ready_ts = 0;
+int ack_ready_count = 0;
+
 pthread_cond_t salon_cond = PTHREAD_COND_INITIALIZER;
 pthread_cond_t duel_cond = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t state_cond_mut = PTHREAD_MUTEX_INITIALIZER;

@@ -44,6 +44,11 @@ void check_pairing()
         return;
     }
 
+    if (ack_ready_count < size - 1) {
+        pthread_mutex_unlock(&ready_list_mut);
+        return;
+    }
+
     int pos = -1;
     for (int i = 0; i < ready_list_size; i++) {
         if (ready_list[i].pid == rank) {
@@ -91,6 +96,9 @@ void send_ready()
     int ts = lamportClock;
     pthread_mutex_unlock(&lamportMutex);
 
+    my_ready_ts = ts;
+    ack_ready_count = 0;
+
     ready_list_add(rank, ts);
 
     packet_t pkt;
@@ -106,7 +114,23 @@ void handle_ready(packet_t pkt)
 {
     ready_list_add(pkt.src, pkt.ts);
 
+    packet_t ack;
+    ack.data = pkt.ts;
+    sendPacket(&ack, pkt.src, ACK_READY);
+
     if (stan == WAIT_DUEL)
+        check_pairing();
+}
+
+void handle_ack_ready(packet_t pkt)
+{
+    if (stan != WAIT_DUEL || paired)
+        return;
+    if (pkt.data != my_ready_ts)
+        return;
+
+    ack_ready_count++;
+    if (ack_ready_count >= size - 1)
         check_pairing();
 }
 

@@ -50,6 +50,10 @@ void handle_req_salon(packet_t pkt)
             salon_wait_queue[salon_wait_queue_size++] = pkt.src;
             pthread_mutex_unlock(&salon_queue_mut);
         }
+    } else if (stan == IN_SALON || stan == WAIT_DUEL) {
+        pthread_mutex_lock(&salon_queue_mut);
+        salon_wait_queue[salon_wait_queue_size++] = pkt.src;
+        pthread_mutex_unlock(&salon_queue_mut);
     } else {
         sendPacket(NULL, pkt.src, ACK_SALON);
     }

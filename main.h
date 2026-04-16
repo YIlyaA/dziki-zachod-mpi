@@ -45,6 +45,9 @@ extern pthread_mutex_t ready_list_mut;
 extern int partner_id;
 extern int paired;
 
+extern int my_ready_ts;
+extern int ack_ready_count;
+
 /* ---- Condition variables dla głównego wątku ---- */
 extern pthread_cond_t salon_cond;
 extern pthread_cond_t duel_cond;
