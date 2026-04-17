@@ -34,7 +34,9 @@ void salon_release()
     }
     pthread_mutex_lock(&salon_queue_mut);
     for (int i = 0; i < salon_wait_queue_size; i++) {
-        sendPacket(NULL, salon_wait_queue[i], ACK_SALON);
+        packet_t ack;
+        ack.data = salon_wait_queue[i].ts;
+        sendPacket(&ack, salon_wait_queue[i].pid, ACK_SALON);
     }
     salon_wait_queue_size = 0;
     pthread_mutex_unlock(&salon_queue_mut);
@@ -44,31 +46,37 @@ void handle_req_salon(packet_t pkt)
 {
     if (stan == WAIT_SALON) {
         if (pkt.ts < my_req_ts || (pkt.ts == my_req_ts && pkt.src < rank)) {
-            sendPacket(NULL, pkt.src, ACK_SALON);
+            packet_t ack;
+            ack.data = pkt.ts;
+            sendPacket(&ack, pkt.src, ACK_SALON);
         } else {
             pthread_mutex_lock(&salon_queue_mut);
-            salon_wait_queue[salon_wait_queue_size++] = pkt.src;
+            salon_wait_queue[salon_wait_queue_size++] = (salon_wait_entry_t){pkt.src, pkt.ts};
             pthread_mutex_unlock(&salon_queue_mut);
         }
     } else if (stan == IN_SALON || stan == WAIT_DUEL) {
         pthread_mutex_lock(&salon_queue_mut);
-        salon_wait_queue[salon_wait_queue_size++] = pkt.src;
+        salon_wait_queue[salon_wait_queue_size++] = (salon_wait_entry_t){pkt.src, pkt.ts};
         pthread_mutex_unlock(&salon_queue_mut);
     } else {
-        sendPacket(NULL, pkt.src, ACK_SALON);
+        packet_t ack;
+        ack.data = pkt.ts;
+        sendPacket(&ack, pkt.src, ACK_SALON);
     }
 }
 
 void handle_ack_salon(packet_t pkt)
 {
-    (void)pkt;
-    if (stan == WAIT_SALON) {
-        ack_salon_count++;
-        if (ack_salon_count >= size - S) {
-            changeState(IN_SALON);
-            pthread_mutex_lock(&state_cond_mut);
-            pthread_cond_signal(&salon_cond);
-            pthread_mutex_unlock(&state_cond_mut);
-        }
+    if (stan != WAIT_SALON)
+        return;
+    if (pkt.data != my_req_ts)
+        return;
+
+    ack_salon_count++;
+    if (ack_salon_count >= size - S) {
+        changeState(IN_SALON);
+        pthread_mutex_lock(&state_cond_mut);
+        pthread_cond_signal(&salon_cond);
+        pthread_mutex_unlock(&state_cond_mut);
     }
 }

@@ -22,7 +22,7 @@ int S = 2;
 int my_req_ts = 0;
 int ack_salon_count = 0;
 
-int salon_wait_queue[MAX_PROCS];
+salon_wait_entry_t salon_wait_queue[MAX_PROCS];
 int salon_wait_queue_size = 0;
 pthread_mutex_t salon_queue_mut = PTHREAD_MUTEX_INITIALIZER;
 

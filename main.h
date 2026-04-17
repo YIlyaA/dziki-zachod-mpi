@@ -28,7 +28,12 @@ extern int S;
 extern int my_req_ts;
 extern int ack_salon_count;
 
-extern int salon_wait_queue[MAX_PROCS];
+typedef struct
+{
+    int pid;
+    int ts;
+} salon_wait_entry_t;
+extern salon_wait_entry_t salon_wait_queue[MAX_PROCS];
 extern int salon_wait_queue_size;
 extern pthread_mutex_t salon_queue_mut;
 
